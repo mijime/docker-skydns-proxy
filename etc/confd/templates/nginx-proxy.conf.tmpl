@@ -11,6 +11,8 @@ server {
   proxy_buffering off;
   {{if getenv "NGINX_CLIENT_MAX_BODY_SIZE"}}client_max_body_size {{getenv "NGINX_CLIENT_MAX_BODY_SIZE"}};
   {{end}}
+  {{if getenv "NGINX_CLIENT_BODY_BUFFER_SIZE"}}client_body_buffer_size {{getenv "NGINX_CLIENT_BODY_BUFFER_SIZE"}};
+  {{end}}
   location / {
     proxy_pass http://{{.}};
     proxy_set_header host $http_host;
