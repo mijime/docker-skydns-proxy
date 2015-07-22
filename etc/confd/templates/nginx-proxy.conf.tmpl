@@ -1,0 +1,27 @@
+server {
+  listen 80 default_server;
+  server_name _; # This is just an invalid value which will never trigger on a real hostname.
+  return 503;
+}{{range ls "/"}}{{$cl:=printf "/%s/*%s" . (getenv "VIRTUAL_PORTS") | getvs}}{{if gt (len $cl) 0}}
+upstream {{.}} { {{range $cl}}{{$d:=json .}}
+  server {{$d.host}}:{{$d.port}};{{end}}
+}
+server {
+  server_name {{.}}.{{getenv "VIRTUAL_DOMAIN"}};
+  proxy_buffering off;
+  {{if getenv "NGINX_CLIENT_MAX_BODY_SIZE"}}client_max_body_size {{getenv "NGINX_CLIENT_MAX_BODY_SIZE"}};
+  {{end}}
+  location / {
+    proxy_pass http://{{.}};
+    proxy_set_header host $http_host;
+    proxy_set_header x-real-ip $remote_addr;
+    proxy_set_header x-forwarded-for $proxy_add_x_forwarded_for;
+    proxy_set_header x-forwarded-proto $scheme;
+    proxy_set_header authorization $http_authorization;
+    proxy_pass_header authorization;
+
+    # HTTP 1.1 support
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+  }
+}{{end}}{{end}}
